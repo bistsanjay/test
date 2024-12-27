@@ -48,7 +48,7 @@ jobs:
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /home/demo
+          cd /home/demo/
           composer update
           sudo chmod -R 777 storage/ bootstrap/ database/
           sudo touch database/database.sqlite
