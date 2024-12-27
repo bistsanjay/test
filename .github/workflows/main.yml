@@ -2,7 +2,7 @@ name: Deploy Laravel Application to Production Server
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
@@ -12,6 +12,25 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.3
+
+    - name: Install Composer Dependencies
+      run: composer install --optimize-autoloader --no-dev --no-progress --no-interaction --prefer-dist
+
+    - name: Install Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install NPM Dependencies
+      run: npm install
+
+    - name: Build NPM Assets
+      run: npm run build
+
     - name: Synchronize Files To Server
       uses: easingthemes/ssh-deploy@v2.1.5
       env:
@@ -19,7 +38,8 @@ jobs:
         SOURCE: "."
         REMOTE_HOST: ${{ secrets.VPS_HOST }}
         REMOTE_USER: ${{ secrets.VPS_USER }}
-        TARGET: "/var/www/html/"
+        TARGET: "/home/demo/"
+        VERBOSE: true
 
     - name: Run Remote/Artisan Commands
       uses: appleboy/ssh-action@v0.1.6
@@ -28,6 +48,14 @@ jobs:
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /var/www/html/
-          php artisan migrate --force
+          cd /home/demo
+          composer update
+          sudo chmod -R 777 storage/ bootstrap/ database/
+          sudo touch database/database.sqlite
+          sudo chmod 644 storage/logs/laravel.log
+          sudo chmod -R 777 storage/ bootstrap/ database/
+          sudo mv .env.example .env
+          php artisan key:generate
+          php artisan migrate:refresh
+
           php artisan optimize
