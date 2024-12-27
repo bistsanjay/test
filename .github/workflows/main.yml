@@ -57,5 +57,4 @@ jobs:
           sudo mv .env.example .env
           php artisan key:generate
           php artisan migrate:refresh
-
           php artisan optimize
